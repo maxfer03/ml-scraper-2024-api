@@ -2,14 +2,15 @@ from app import app
 from flask import request, jsonify
 import requests
 from bs4 import BeautifulSoup
-
+import time
 @app.route('/')
 def index():
     # Home route that returns a string
-    return "Mercadolibre Scraper API. Now with deep search!!!"
+    return "Mercadolibre Scraper API"
 
 @app.route('/search', methods=['GET'])
-def search():
+def search(): 
+    start_time = time.time()
     # Get the query parameter from the URL
     query = request.args.get('query', '')
     
@@ -74,9 +75,15 @@ def search():
 
     # While the flag is 0, scrape the next page
     page_counter = 0
-    while has_finished == 0:
+    elapsed_time = 0
+    while has_finished == 0 and elapsed_time < 15:
+      print('COUNTER', page_counter)
       get_page_data(page_counter)
       page_counter = page_counter + 1
+      time_now = time.time()
+      elapsed_time = time_now - start_time
+      print("Elapsed time: ", elapsed_time)
+      
 
     # Print the total number of scraped products
     print('total products: ', len(products))
