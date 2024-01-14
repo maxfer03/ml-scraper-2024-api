@@ -74,6 +74,8 @@ def search():
       print("FINISHED Scraping at ", url)
 
     # While the flag is 0, scrape the next page
+    # temporary timeout fallback: API Gateway has a 
+    # locked 30s timeout limit
     page_counter = 0
     elapsed_time = 0
     while has_finished == 0 and elapsed_time < 15:
