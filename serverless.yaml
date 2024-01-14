@@ -1,0 +1,21 @@
+service: scraper-api #name this whatever you want
+ 
+provider:
+ name: aws
+ runtime: python3.11
+ stage: dev
+ region: us-east-1
+ memorySize: 128
+plugins:
+ - serverless-wsgi
+ - serverless-python-requirements
+custom:
+ wsgi:
+   app: app.app
+   packRequirements: false
+functions:
+ app:
+   handler: wsgi_handler.handler
+   events:
+     - http: ANY /
+     - http: 'ANY /{proxy+}'
