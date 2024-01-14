@@ -5,44 +5,81 @@ from bs4 import BeautifulSoup
 
 @app.route('/')
 def index():
-    return "Mercadolibre Scraper API"
+    # Home route that returns a string
+    return "Mercadolibre Scraper API. Now with deep search!!!"
 
 @app.route('/search', methods=['GET'])
 def search():
-    query = request.args.get('query', '')  # Get search query from URL parameter
+    # Get the query parameter from the URL
+    query = request.args.get('query', '')
+    
+    # If no query provided, return an error
     if not query:
         return jsonify({'error': 'No query provided'}), 400
-
-    url = f"https://listado.mercadolibre.com.ar/{query}"
-    response = requests.get(url)
-    if response.status_code != 200:
-        return jsonify({'error': 'Failed to fetch data'}), 500
-
-    soup = BeautifulSoup(response.content, 'html.parser')
     
-    card_class =  "ui-search-layout__item"
-    product_brand_class = "ui-search-item__brand-discoverability ui-search-item__group__element"
-    final_price_container_class = "andes-money-amount ui-search-price__part ui-search-price__part--medium andes-money-amount--cents-superscript"
-    final_price_class = "andes-money-amount__fraction"
-    print("Scraping at ", url)
+    # List to store the scraped products
     products = []
-    for card in soup.find_all('li', class_=card_class):  # Replace with actual class
-      # print("\nPRODUCT", product, '\n')
-      title = card.find('a')
-      final_price = int(card.find('span', class_=final_price_container_class).find('span', class_=final_price_class).text.replace('.', ''))
-      try:
-          brand_element = card.find('span', class_=product_brand_class)
-          brand = brand_element.text.strip() if brand_element and brand_element.text.strip() else None
-      except AttributeError:
-          brand = None
+
+    # Flag to indicate when the scraping should stop
+    has_finished = 0
+    def get_page_data(page=0):
+      # Declare has_finished as nonlocal
+      nonlocal has_finished
       
-      products.append({
-          'title': title.text,
-          'url': title['href'],
-          'final_price': final_price,
-          'brand': brand
-      })
-    # print(products)
+      # Append the page query if page > 0
+      page_query = f'_Desde_{49*page}_NoIndex_True' if page > 0 else ''
+      
+      # URL of the page to be scraped
+      url = f"https://listado.mercadolibre.com.ar/{query}{page_query}"
+      
+      # Send a GET request to the URL
+      response = requests.get(url)
+      print(f'scraping at page {page}: {url}')
+      
+      # If the request was not successful, stop scraping and return an error
+      if response.status_code != 200:
+          has_finished = 1
+          print('Failed to fetch data')
+          return jsonify({'error': 'Failed to fetch data'}), 500
 
+      # Parse the HTML content of the page
+      soup = BeautifulSoup(response.content, 'html.parser')
+
+      # CSS classes of the elements to be scraped
+      card_class =  "ui-search-layout__item"
+      product_brand_class = "ui-search-item__brand-discoverability ui-search-item__group__element"
+      final_price_container_class = "andes-money-amount ui-search-price__part ui-search-price__part--medium andes-money-amount--cents-superscript"
+      final_price_class = "andes-money-amount__fraction"
+      
+      # Find and iterate over all the product cards
+      scraped_products = soup.find_all('li', class_=card_class)
+      for card in scraped_products:
+        # Find the title, URL, final price, and brand of the product
+        title = card.find('a')
+        final_price = int(card.find('span', class_=final_price_container_class).find('span', class_=final_price_class).text.replace('.', ''))
+        try:
+            brand_element = card.find('span', class_=product_brand_class)
+            brand = brand_element.text.strip() if brand_element and brand_element.text.strip() else None
+        except AttributeError:
+            brand = None
+        
+        # Append the product to the list
+        products.append({
+            'title': title.text,
+            'url': title['href'],
+            'final_price': final_price,
+            'brand': brand
+        })
+      print("FINISHED Scraping at ", url)
+
+    # While the flag is 0, scrape the next page
+    page_counter = 0
+    while has_finished == 0:
+      get_page_data(page_counter)
+      page_counter = page_counter + 1
+
+    # Print the total number of scraped products
+    print('total products: ', len(products))
+
+    # Return the list of products as JSON
     return jsonify(products)
-
