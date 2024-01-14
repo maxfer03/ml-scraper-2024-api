@@ -23,20 +23,26 @@ def search():
         page_query = 0
     
     # List to store the scraped products
-    products = []
+    page_data = {
+       'info': {
+          'current_page': int(page_query),
+          'total_pages': 0,
+          'url': ''
+       },
+       'products': []
+    }
 
     # Flag to indicate when the scraping should stop
     has_finished = 0
     def get_page_data(page=0):
       # Declare has_finished as nonlocal
       nonlocal has_finished
-      
       # Append the page query if page > 0
       page_suffix = f'_Desde_{49*page}_NoIndex_True' if page > 0 else ''
       
       # URL of the page to be scraped
       url = f"https://listado.mercadolibre.com.ar/{query}{page_suffix}"
-      
+      page_data['info']['url'] = url
       # Send a GET request to the URL
       response = requests.get(url)
       print(f'scraping at page {page}: {url}')
@@ -56,6 +62,13 @@ def search():
       final_price_container_class = "andes-money-amount ui-search-price__part ui-search-price__part--medium andes-money-amount--cents-superscript"
       final_price_class = "andes-money-amount__fraction"
       
+      total_pages_class = "andes-pagination__page-count"
+
+      page_data['info']['total_pages'] = int(soup.find('li', class_=total_pages_class).text.split(' ')[1])
+
+
+
+      
       # Find and iterate over all the product cards
       scraped_products = soup.find_all('li', class_=card_class)
       for card in scraped_products:
@@ -69,34 +82,24 @@ def search():
             brand = None
         
         # Append the product to the list
-        products.append({
+        page_data['products'].append({
             'title': title.text,
             'url': title['href'],
             'final_price': final_price,
             'brand': brand
         })
+      
+      total_pages = soup.find('li', class_=total_pages_class)
+      
       print("FINISHED Scraping at ", url)
 
-    # While the flag is 0, scrape the next page
-    # temporary timeout fallback: API Gateway has a 
-    # locked 30s timeout limit
-    # page_counter = 0
-    # elapsed_time = 0
-    # while has_finished == 0 and elapsed_time < 15:
-    #   print('COUNTER', page_counter)
-    #   get_page_data(page_counter)
-    #   page_counter = page_counter + 1
-    #   time_now = time.time()
-    #   elapsed_time = time_now - start_time
-    #   print("Elapsed time: ", elapsed_time)
       
     get_page_data(int(page_query))
 
-    # Print the total number of scraped products
-    print('total products: ', len(products))
+
 
     # Return the list of products as JSON
-    if len(products) > 0:
-      return jsonify(products)
+    if len(page_data['products']) > 0:
+      return jsonify(page_data)
     else:
       return jsonify({'error': 'No items found'}), 404
