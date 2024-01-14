@@ -13,10 +13,14 @@ def search():
     start_time = time.time()
     # Get the query parameter from the URL
     query = request.args.get('query', '')
+    page_query = request.args.get('page', '')
     
     # If no query provided, return an error
     if not query:
         return jsonify({'error': 'No query provided'}), 400
+    
+    if not page_query:
+        page_query = 0
     
     # List to store the scraped products
     products = []
@@ -28,10 +32,10 @@ def search():
       nonlocal has_finished
       
       # Append the page query if page > 0
-      page_query = f'_Desde_{49*page}_NoIndex_True' if page > 0 else ''
+      page_suffix = f'_Desde_{49*page}_NoIndex_True' if page > 0 else ''
       
       # URL of the page to be scraped
-      url = f"https://listado.mercadolibre.com.ar/{query}{page_query}"
+      url = f"https://listado.mercadolibre.com.ar/{query}{page_suffix}"
       
       # Send a GET request to the URL
       response = requests.get(url)
@@ -76,19 +80,23 @@ def search():
     # While the flag is 0, scrape the next page
     # temporary timeout fallback: API Gateway has a 
     # locked 30s timeout limit
-    page_counter = 0
-    elapsed_time = 0
-    while has_finished == 0 and elapsed_time < 15:
-      print('COUNTER', page_counter)
-      get_page_data(page_counter)
-      page_counter = page_counter + 1
-      time_now = time.time()
-      elapsed_time = time_now - start_time
-      print("Elapsed time: ", elapsed_time)
+    # page_counter = 0
+    # elapsed_time = 0
+    # while has_finished == 0 and elapsed_time < 15:
+    #   print('COUNTER', page_counter)
+    #   get_page_data(page_counter)
+    #   page_counter = page_counter + 1
+    #   time_now = time.time()
+    #   elapsed_time = time_now - start_time
+    #   print("Elapsed time: ", elapsed_time)
       
+    get_page_data(int(page_query))
 
     # Print the total number of scraped products
     print('total products: ', len(products))
 
     # Return the list of products as JSON
-    return jsonify(products)
+    if len(products) > 0:
+      return jsonify(products)
+    else:
+      return jsonify({'error': 'No items found'}), 404
