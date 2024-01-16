@@ -64,7 +64,12 @@ def search():
       
       total_pages_class = "andes-pagination__page-count"
 
-      page_data['info']['total_pages'] = int(soup.find('li', class_=total_pages_class).text.split(' ')[1])
+      
+
+      try:
+         page_data['info']['total_pages'] = int(soup.find('li', class_=total_pages_class).text.split(' ')[1])
+      except AttributeError:
+         page_data['info']['total_pages'] = 1
 
 
 
