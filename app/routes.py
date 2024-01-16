@@ -62,9 +62,7 @@ def search():
       final_price_container_class = "andes-money-amount ui-search-price__part ui-search-price__part--medium andes-money-amount--cents-superscript"
       final_price_class = "andes-money-amount__fraction"
       
-      total_pages_class = "andes-pagination__page-count"
-
-      
+      total_pages_class = "andes-pagination__page-count"      
 
       try:
          page_data['info']['total_pages'] = int(soup.find('li', class_=total_pages_class).text.split(' ')[1])
@@ -79,7 +77,11 @@ def search():
       for card in scraped_products:
         # Find the title, URL, final price, and brand of the product
         title = card.find('a')
-        final_price = int(card.find('span', class_=final_price_container_class).find('span', class_=final_price_class).text.replace('.', ''))
+        try:
+          final_price_container = card.find('span', class_=final_price_container_class)
+          final_price = int(final_price_container.find('span', class_=final_price_class).text.replace('.', ''))
+        except AttributeError:
+          final_price = int(card.find('span', class_=final_price_class).text.replace('.', ''))
         try:
             brand_element = card.find('span', class_=product_brand_class)
             brand = brand_element.text.strip() if brand_element and brand_element.text.strip() else None
