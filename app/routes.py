@@ -26,7 +26,6 @@ def search():
     page_data = {
        'info': {
           'current_page': int(page_query),
-          'total_pages': 0,
           'url': ''
        },
        'products': []
@@ -62,12 +61,8 @@ def search():
       final_price_container_class = "andes-money-amount ui-search-price__part ui-search-price__part--medium andes-money-amount--cents-superscript"
       final_price_class = "andes-money-amount__fraction"
       
-      total_pages_class = "andes-pagination__page-count"      
 
-      try:
-         page_data['info']['total_pages'] = int(soup.find('li', class_=total_pages_class).text.split(' ')[1])
-      except AttributeError:
-         page_data['info']['total_pages'] = 1
+
 
 
 
@@ -96,7 +91,7 @@ def search():
             'brand': brand
         })
       
-      total_pages = soup.find('li', class_=total_pages_class)
+      
       
       print("FINISHED Scraping at ", url)
 
