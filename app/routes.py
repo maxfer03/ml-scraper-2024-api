@@ -1,9 +1,24 @@
 from app import app
-from flask import request, jsonify
+from flask import Flask, request, jsonify, current_app, g as app_ctx
 import requests
 from bs4 import BeautifulSoup
 import time
 import utils
+
+@app.before_request
+def logging_before():
+  # Store the start time for the request
+  app_ctx.start_time = time.perf_counter()
+  
+    
+@app.after_request
+def logging_after(response):
+  # Get total time in milliseconds
+  total_time = time.perf_counter() - app_ctx.start_time
+  time_in_ms = int(total_time * 1000)
+  # Log the time taken for the endpoint 
+  current_app.logger.info('%s ms %s %s %s', time_in_ms, request.method, request.path, dict(request.args))
+  return response
 
 @app.route('/')
 def index():
@@ -33,7 +48,7 @@ def search():
     page_data = {
        'info': {
           'current_page': int(page_query),
-          'url': ''
+          'url': '',
        },
        'products': []
     }
