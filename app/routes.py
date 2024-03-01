@@ -49,6 +49,7 @@ def search():
        'info': {
           'current_page': int(page_query),
           'url': '',
+          'tld': tld
        },
        'products': []
     }
@@ -94,7 +95,7 @@ def search():
       scraped_products = soup.find_all('li', class_=card_class)
       for card in scraped_products:
         # Find the title, URL, final price, and brand of the product
-        
+        is_usd = False
         try:
           prod_link = card.find('a')['href']
         except AttributeError:
@@ -105,6 +106,8 @@ def search():
            prod_title = ''
         try:
           final_price_container = card.find('span', class_=final_price_container_class)
+          if 'U$S' in final_price_container.text:
+            is_usd = True            
           final_price = int(final_price_container.find('span', class_=final_price_class).text.replace('.', ''))
         except AttributeError:
           final_price = int(card.find('span', class_=final_price_class).text.replace('.', ''))
@@ -119,6 +122,7 @@ def search():
             'title': prod_title,
             'url': prod_link,
             'final_price': final_price,
+            'is_usd': is_usd,
             'brand': brand
         })
       
